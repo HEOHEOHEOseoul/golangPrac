@@ -17,6 +17,5 @@ func main() {
 		fmt.Println(errr)
 	}
 
-	dictionary.Delete("hi")
-	fmt.Println(dictionary)
+	fmt.Println(dictionary.Delete("hii"))
 }
