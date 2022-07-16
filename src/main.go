@@ -16,4 +16,7 @@ func main() {
 	} else {
 		fmt.Println(errr)
 	}
+
+	dictionary.Delete("hi")
+	fmt.Println(dictionary)
 }
