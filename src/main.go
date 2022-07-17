@@ -1,21 +1,68 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"second/src/mydict"
+	"net/http"
 )
 
-func main() {
-	dictionary := mydict.Dictionary{}
-	dictionary.Add("hi", "안녕")
-	fmt.Println(dictionary)
-	errr := dictionary.Update("hii", "인사")
+type requestResult struct {
+	url    string
+	status string
+}
 
-	if errr == nil {
-		fmt.Println(dictionary)
-	} else {
-		fmt.Println(errr)
+var statusError = errors.New("status err")
+
+func main() {
+	var results = map[string]string{}
+	c := make(chan requestResult)
+	urls := []string{
+		"https://www.airbnb.com/",
+		"https://www.google.com/",
+		"https://www.amazon.com/",
+		"https://www.reddit.com/",
+		"https://www.google.com/",
+		"https://soundcloud.com/",
+		"https://www.facebook.com/",
+		"https://www.instagram.com/",
+		"https://academy.nomadcoders.co/",
 	}
 
-	fmt.Println(dictionary.Delete("hii"))
+	for _, url := range urls {
+		go hitUrl(url, c)
+
+	}
+	for i := 0; i < len(urls); i++ {
+		result := <-c
+		results[result.url] = result.status
+	}
+	for url, status := range results {
+		fmt.Println(url, status)
+	}
+
 }
+
+func hitUrl(url string, c chan requestResult) {
+
+	resp, err := http.Get(url)
+	status := "ok"
+	if err != nil || resp.StatusCode >= 400 {
+		status = "failed"
+	}
+	c <- requestResult{url: url, status: status}
+
+}
+
+// func main() {
+// 	c := make(chan string)
+// 	people := [2]string{"hi", "bye"}
+// 	for _, person := range people {
+// 		go isSexy(person, c)
+// 		fmt.Println(<-c)
+// 	}
+
+// }
+// func isSexy(person string, c chan string) {
+// 	time.Sleep(time.Second * 3)
+// 	c <- person + " is sexy"
+// }
