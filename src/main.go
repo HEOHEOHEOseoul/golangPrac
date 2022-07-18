@@ -1,68 +1,44 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-type requestResult struct {
-	url    string
-	status string
-}
-
-var statusError = errors.New("status err")
+var baseURL string = "https://upbit.com/service_center/notice"
 
 func main() {
-	var results = map[string]string{}
-	c := make(chan requestResult)
-	urls := []string{
-		"https://www.airbnb.com/",
-		"https://www.google.com/",
-		"https://www.amazon.com/",
-		"https://www.reddit.com/",
-		"https://www.google.com/",
-		"https://soundcloud.com/",
-		"https://www.facebook.com/",
-		"https://www.instagram.com/",
-		"https://academy.nomadcoders.co/",
-	}
-
-	for _, url := range urls {
-		go hitUrl(url, c)
-
-	}
-	for i := 0; i < len(urls); i++ {
-		result := <-c
-		results[result.url] = result.status
-	}
-	for url, status := range results {
-		fmt.Println(url, status)
-	}
-
+	getPages()
 }
 
-func hitUrl(url string, c chan requestResult) {
+func getPages() int {
+	res, err := http.Get(baseURL)
+	checkErr(err)
+	checkCode(res)
 
-	resp, err := http.Get(url)
-	status := "ok"
-	if err != nil || resp.StatusCode >= 400 {
-		status = "failed"
-	}
-	c <- requestResult{url: url, status: status}
+	defer res.Body.Close()
 
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	checkErr(err)
+	fmt.Println(doc)
+	doc.Find("#UpbitLayout > div.subMain > div > section.ty02 > article").Each(func(i int, s *goquery.Selection) {
+		// test, test2 := s.Find("#bodySec_2").Html()
+		fmt.Println(s.Html())
+	})
+	return 0
 }
 
-// func main() {
-// 	c := make(chan string)
-// 	people := [2]string{"hi", "bye"}
-// 	for _, person := range people {
-// 		go isSexy(person, c)
-// 		fmt.Println(<-c)
-// 	}
+func checkErr(err error) {
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
 
-// }
-// func isSexy(person string, c chan string) {
-// 	time.Sleep(time.Second * 3)
-// 	c <- person + " is sexy"
-// }
+func checkCode(res *http.Response) {
+	if res.StatusCode != 200 {
+		log.Fatalln("request status:", res.StatusCode)
+	}
+}
